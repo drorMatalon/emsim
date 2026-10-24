@@ -1,0 +1,107 @@
+<!-- One element of the 2x2 FR4 array in ..\2_4_patch_arr, alone on its 62 x 62 mm cell (the array pitch). -->
+<!-- Inset-fed patch: resonant side 29.4 mm along y (polarised along y), width 38 mm along x, fed on its -y edge. -->
+<!-- Feed: 3.11 mm (50 Ohm) microstrip from the board edge, inset depth 8.0 mm, slot gap 1.0 mm on each side. -->
+<!-- Units: length [mm], frequency [GHz], resistance [Ohm]. Metals are flat sheets (z start = z stop). -->
+
+<model>
+
+    <box>
+        <name> sub </name>
+        <material> FR4 </material>
+        <x> [-31, 31] </x>
+        <y> [-31, 31] </y>
+        <z> [0, 1.6] </z>
+    </box>
+
+    <box>
+        <name> gnd </name>
+        <material> copper </material>
+        <x> [-31, 31] </x>
+        <y> [-31, 31] </y>
+        <z> 0 </z>
+    </box>
+
+    <!-- Patch body above the inset: from the inset bottom (-29.4/2 + 6.0) to the +y edge. -->
+    <box>
+        <name> patch_main </name>
+        <material> copper </material>
+        <x> [-38/2, 38/2] </x>
+        <y> [-29.4/2 + 6.0, 29.4/2] </y>
+        <z> 1.6 </z>
+    </box>
+
+    <!-- Patch parts left and right of the inset, outside the slots (feed half width 3.11/2 + gap 1.0). -->
+    <box>
+        <name> patch_left </name>
+        <material> copper </material>
+        <x> [-38/2, -(3.11/2 + 1.0)] </x>
+        <y> [-29.4/2, -29.4/2 + 6.0] </y>
+        <z> 1.6 </z>
+    </box>
+
+    <box>
+        <name> patch_right </name>
+        <material> copper </material>
+        <x> [3.11/2 + 1.0, 38/2] </x>
+        <y> [-29.4/2, -29.4/2 + 6.0] </y>
+        <z> 1.6 </z>
+    </box>
+
+    <!-- 50 Ohm line from the board edge into the inset, touching the patch body. -->
+    <box>
+        <name> feed </name>
+        <material> copper </material>
+        <x> [-3.11/2, 3.11/2] </x>
+        <y> [-31, -29.4/2 + 6.0] </y>
+        <z> 1.6 </z>
+    </box>
+
+    <!-- Edge port: from the ground up to the line, like an edge launch SMA. -->
+    <port>
+        <name> p1 </name>
+        <resistance> 50 </resistance>
+        <direction> z </direction>
+        <x> [-3.11/2, 3.11/2] </x>
+        <y> -31 </y>
+        <z> [0, 1.6] </z>
+    </port>
+
+    <!-- 10 MHz steps, so 2.4 GHz is a sweep point. -->
+    <frequency>
+        <start> 2.0 </start>
+        <stop> 2.8 </stop>
+        <points> 81 </points>
+    </frequency>
+
+    <mesh>
+        <cells_per_wavelength> 20 </cells_per_wavelength>
+        <air_margin> 0.25 </air_margin>
+    </mesh>
+
+    <monitors>
+
+        <s_params>
+            <port> p1 </port>
+        </s_params>
+
+        <far_field>
+            <name> ff_2_4 </name>
+            <port> p1 </port>
+            <frequency> 2.4 </frequency>
+            <resolution> 2 </resolution>
+        </far_field>
+
+        <!-- Plane 20 mm above the patch, covering the whole board. -->
+        <near_field>
+            <name> nf_2_4 </name>
+            <port> p1 </port>
+            <frequency> 2.4 </frequency>
+            <x> [-40, 40] </x>
+            <y> [-40, 40] </y>
+            <z> 1.6 + 20 </z>
+            <resolution> 2 </resolution>
+        </near_field>
+
+    </monitors>
+
+</model>

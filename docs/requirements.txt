@@ -1,0 +1,6 @@
+# Python packages for emsim (versions it was tested with).
+# openEMS and CSXCAD are NOT on PyPI: install their wheels from the openEMS folder, see docs\INSTALL.md.
+numpy>=2.5
+scipy>=1.17
+h5py>=3.16
+matplotlib>=3.11

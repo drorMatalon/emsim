@@ -1,0 +1,41 @@
+<!-- Shared material library, used by every model.xml. -->
+<!-- sigma in S/m. Dielectrics are lossless for now. -->
+<!-- Types: pec = perfect conductor (any box), metal = lossy conducting sheet (flat boxes only), dielectric. -->
+
+<materials>
+
+    <material>
+        <name> PEC </name>
+        <type> pec </type>
+    </material>
+
+    <material>
+        <name> air </name>
+        <type> dielectric </type>
+        <epsilon_r> 1.0 </epsilon_r>
+        <mu_r> 1.0 </mu_r>
+    </material>
+
+    <material>
+        <name> copper </name>
+        <type> metal </type>
+        <sigma> 5.8e7 </sigma>
+        <epsilon_r> 1.0 </epsilon_r>
+        <mu_r> 1.0 </mu_r>
+    </material>
+
+    <material>
+        <name> FR4 </name>
+        <type> dielectric </type>
+        <epsilon_r> 4.4 </epsilon_r>
+        <mu_r> 1.0 </mu_r>
+    </material>
+
+    <material>
+        <name> RO4350B </name>
+        <type> dielectric </type>
+        <epsilon_r> 3.66 </epsilon_r>
+        <mu_r> 1.0 </mu_r>
+    </material>
+
+</materials>
