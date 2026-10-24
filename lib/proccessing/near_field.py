@@ -8,16 +8,19 @@ import h5py
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from lib.support.defines import AXES, MM
+from lib.support.defines import AXES, MM, NEAR_FIELD_DUMP_NAME
 
 # =========================================
 # Classes and functions
 # =========================================
 
-def near_field(near_field_monitor, field_scale, paths):
+def near_field(near_field_monitor, plane_index, field_scale, paths):
     """Sample the E field (Ex, Ey, Ez along the model's x / y / z axes) of one near field monitor on its grid,
-    from the run where its port is excited, scaled to the normalized incident power."""
-    dump_path = paths["sim"] / near_field_monitor["port"] / f"{near_field_monitor['name']}.h5"
+    from the run where its port is excited, scaled to the normalized incident power.
+    The dump file is found by the monitor's plane position, the same name sim_engine gave it."""
+    dump_path = paths["sim"] / near_field_monitor["port"] / f"{NEAR_FIELD_DUMP_NAME}_{plane_index}.h5"
+    if not dump_path.is_file():
+        raise FileNotFoundError(f"{dump_path} is missing, rerun with --force to simulate again")
     mesh, field = read_near_field_dump(dump_path, near_field_monitor["frequency"])
     near_field_result = {
         "x": near_field_monitor["x"],

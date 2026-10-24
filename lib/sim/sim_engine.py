@@ -12,7 +12,7 @@ import time
 from lib.common_functions import calculate_air_region, calculate_bounding_box
 from lib.sim.geometry_builder import geometry_builder
 from lib.sim.mesh_builder import mesh_builder
-from lib.support.defines import AXES, END_CRITERIA, MAX_TIMESTEPS, OPENEMS_DIR, OPENEMS_LOG_NAME, PML_CELLS
+from lib.support.defines import AXES, END_CRITERIA, MAX_TIMESTEPS, NEAR_FIELD_DUMP_NAME, OPENEMS_DIR, OPENEMS_LOG_NAME, PML_CELLS
 from lib.support.defines import VIEW_FILE_NAME, VIEWER_PATH
 
 # The openEMS module loads its DLLs from the install folder, which Windows does not search by itself.
@@ -114,9 +114,11 @@ def add_far_field_box(fdtd, params):
 
 def add_near_field_dumps(csx, params):
     """Record the E field on every near field plane at all sweep frequencies (dump_type 10 = E field in frequency domain,
-    file_type 1 = HDF5). All planes go into every port's run, so changing a monitor's port or frequency needs no new run."""
-    for near_field in params["monitors"]["near_field"]:
-        dump = csx.AddDump(near_field["name"], dump_type = 10, frequency = params["frequencies"], file_type = 1)
+    file_type 1 = HDF5). All planes go into every port's run, so changing a monitor's port or frequency needs no new run.
+    Files are named by plane position, not monitor name, so renaming a monitor needs no new run either."""
+    for index, near_field in enumerate(params["monitors"]["near_field"]):
+        dump_name = f"{NEAR_FIELD_DUMP_NAME}_{index}"
+        dump = csx.AddDump(dump_name, dump_type = 10, frequency = params["frequencies"], file_type = 1)
         start = [near_field["x"][0], near_field["y"][0], near_field["z"][0]]
         stop = [near_field["x"][-1], near_field["y"][-1], near_field["z"][-1]]
         dump.AddBox(start, stop)

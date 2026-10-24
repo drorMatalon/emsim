@@ -14,7 +14,7 @@ from lib.proccessing.post_processor import post_processor
 from lib.sim.sim_engine import sim_engine, view_model
 from lib.support.config_parser import ConfigError, config_parser
 from lib.support.defines import GHZ
-from lib.support.project_handler import ProjectError, find_rerun_level, project_handler, save_history
+from lib.support.project_handler import ProjectError, clear_generated_dirs, find_rerun_level, project_handler, save_history
 
 # =========================================
 # Classes and functions
@@ -25,7 +25,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = "Antenna simulation with openEMS")
     parser.add_argument("--root", required = True, help = "project folder holding model.xml")
     parser.add_argument("--view", action = "store_true", help = "only build the model and open it in AppCSXCAD")
-    parser.add_argument("--force", action = "store_true", help = "run everything again and rewrite the history")
+    parser.add_argument("--force", action = "store_true",
+                        help = "clear History, Sim and Outputs (model.xml is kept), then run everything again")
     return parser.parse_args()
 
 def print_model_summary(params, rerun_level, rerun_reason):
@@ -67,6 +68,9 @@ def run_project(arguments):
         return
     rerun_level, rerun_reason = select_rerun_level(paths, params, arguments.force)
     print_model_summary(params, rerun_level, rerun_reason)
+    if arguments.force:
+        clear_generated_dirs(paths)
+        print(f"{'Cleared':<9}: History, Sim, Outputs", flush = True)
     if rerun_level == "up_to_date":
         return
     if rerun_level == "simulate":
@@ -84,6 +88,6 @@ def run_project(arguments):
 if __name__ == "__main__":
     try:
         run_project(parse_arguments())
-    except (ProjectError, ConfigError) as error:
+    except (ProjectError, ConfigError, FileNotFoundError) as error:
         print(f"Error: {error}")
         sys.exit(1)

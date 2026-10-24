@@ -21,6 +21,7 @@ OUTPUTS_DIR_NAME = "Outputs"
 HISTORY_FILE_NAME = "model_history.json"
 VIEW_FILE_NAME = "view.xml"
 OPENEMS_LOG_NAME = "openems"
+NEAR_FIELD_DUMP_NAME = "near_field_plane"
 
 # =========================================
 # Physical constants

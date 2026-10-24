@@ -26,8 +26,8 @@ def post_processor(params, paths):
     saved_files = run_s_parameters(setup, params, paths)
     for far_field_monitor in params["monitors"]["far_field"]:
         saved_files += run_far_field_monitor(setup, params, far_field_monitor, paths)
-    for near_field_monitor in params["monitors"]["near_field"]:
-        saved_files += run_near_field_monitor(setup, params, near_field_monitor, paths)
+    for plane_index, near_field_monitor in enumerate(params["monitors"]["near_field"]):
+        saved_files += run_near_field_monitor(setup, params, near_field_monitor, plane_index, paths)
     return saved_files
 
 def run_s_parameters(setup, params, paths):
@@ -58,10 +58,10 @@ def run_far_field_monitor(setup, params, far_field_monitor, paths):
     print(f"{far_field_monitor['name']:<9}: max directivity {max_directivity:.1f} dBi", flush = True)
     return saved_files
 
-def run_near_field_monitor(setup, params, near_field_monitor, paths):
+def run_near_field_monitor(setup, params, near_field_monitor, plane_index, paths):
     """Calculate one near field monitor normalized to INCIDENT_POWER, save it as CSV and heatmaps, print its max |E|."""
     field_scale = calculate_field_scale(setup["ports"], params, near_field_monitor, paths)
-    near_field_result = near_field(near_field_monitor, field_scale, paths)
+    near_field_result = near_field(near_field_monitor, plane_index, field_scale, paths)
     saved_files = [
         write_near_field_csv(near_field_result, near_field_monitor, paths),
         plot_near_field(near_field_result, near_field_monitor, paths),

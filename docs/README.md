@@ -1,4 +1,4 @@
-# emsim - REV_1
+# emsim - REV_2
 
 Antenna simulation environment based on openEMS.
 You describe the antenna in `model.xml`; emsim builds it, simulates it, and saves the
@@ -16,7 +16,7 @@ Then run from the emsim folder:
 ```powershell
 python emsin.py --root C:\path\to\project --view     # build the model and open viewer
 python emsin.py --root C:\path\to\project            # Run whats needed
-python emsin.py --root C:\path\to\project --force    # Force run everything
+python emsin.py --root C:\path\to\project --force    # clear History, Sim, Outputs (model.xml kept), run everything
 ```
 
 emsim remembers the last successful run abd performs only the requiered (Full sim, pre-proccessing, none) 

@@ -5,6 +5,7 @@
 # =========================================
 
 import json
+import shutil
 from pathlib import Path
 
 from lib.support.defines import AXES, HISTORY_DIR_NAME, HISTORY_FILE_NAME, MODEL_FILE_NAME, OUTPUTS_DIR_NAME, SIM_DIR_NAME
@@ -47,6 +48,16 @@ def create_missing_dirs(paths):
     """Create the History, Sim and Outputs folders if they are not there yet."""
     for key in ["history", "sim", "outputs"]:
         paths[key].mkdir(exist_ok = True)
+
+def clear_generated_dirs(paths):
+    """Empty the History, Sim and Outputs folders before a forced run, so only what the current model makes is left.
+    Only emsim writes in these folders; model.xml and any other file in the project folder are never touched."""
+    for key in ["history", "sim", "outputs"]:
+        try:
+            shutil.rmtree(paths[key])
+        except PermissionError as error:
+            raise ProjectError(f"cannot clear {paths[key]}, a file is open in another program: {error.filename}")
+        paths[key].mkdir()
 
 # =========================================
 # History
