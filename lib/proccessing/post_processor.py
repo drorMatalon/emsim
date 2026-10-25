@@ -7,12 +7,14 @@
 import numpy as np
 
 from lib.proccessing.far_field import far_field
+from lib.proccessing.metrics import calculate_beamwidth, calculate_reflection_band, find_far_field_peak
 from lib.proccessing.near_field import near_field
 from lib.proccessing.outputs_writer import write_far_field_csv, write_near_field_csv, write_touchstone
 from lib.proccessing.plots import plot_far_field, plot_near_field, plot_reflection
 from lib.proccessing.s_parameters import calculate_reflection_db, s_parameters
 from lib.sim.sim_engine import create_simulation
-from lib.support.defines import GHZ, INCIDENT_POWER
+from lib.support.defines import BEAMWIDTH_LEVEL_DB, FAR_FIELD_CUT_PHIS, GHZ, INCIDENT_POWER, MHZ
+from lib.support.defines import REFLECTION_BANDWIDTH_LEVEL_DB
 
 # =========================================
 # Classes and functions
@@ -31,20 +33,32 @@ def post_processor(params, paths):
     return saved_files
 
 def run_s_parameters(setup, params, paths):
-    """Save the S matrix as Touchstone, then plot S_ii and print its resonance notch for every s_params monitor."""
+    """Save the S matrix as Touchstone, then plot S_ii and print its resonance and bandwidth for every s_params monitor."""
     s_matrix = s_parameters(setup["ports"], params, paths)
     saved_files = [write_touchstone(s_matrix, params, paths)]
     print(f"{'S matrix':<9}: {saved_files[0].name}", flush = True)
     for s_params_monitor in params["monitors"]["s_params"]:
         port_name = s_params_monitor["port"]
-        port_number = [port["name"] for port in params["ports"]].index(port_name) + 1
         saved_files.append(plot_reflection(s_matrix, params, port_name, paths))
         reflection_db = calculate_reflection_db(s_matrix, params, port_name)
-        notch_index = np.argmin(reflection_db)
-        notch_frequency = params["frequencies"][notch_index] / GHZ
-        print(f"{port_name:<9}: S{port_number}{port_number} notch {reflection_db[notch_index]:.1f} dB "
-              f"at {notch_frequency:.3f} GHz", flush = True)
+        band = calculate_reflection_band(reflection_db, params["frequencies"])
+        print_reflection_summary(band, params, port_name)
     return saved_files
+
+def print_reflection_summary(band, params, port_name):
+    """Print the resonance of one port, then its band under REFLECTION_BANDWIDTH_LEVEL_DB, or why there is none."""
+    port_number = [port["name"] for port in params["ports"]].index(port_name) + 1
+    s_name = f"S{port_number}{port_number}"
+    print(f"{port_name:<9}: {s_name} resonance {band['frequency'] / GHZ:.3f} GHz, {band['reflection_db']:.1f} dB")
+    level_text = f"{REFLECTION_BANDWIDTH_LEVEL_DB:g} dB band"
+    if band["reflection_db"] >= REFLECTION_BANDWIDTH_LEVEL_DB:
+        band_text = f"none, {s_name} never gets under {REFLECTION_BANDWIDTH_LEVEL_DB:g} dB"
+    elif band["low"] is None or band["high"] is None:
+        band_text = "reaches the sweep edge, widen the sweep to measure it"
+    else:
+        band_text = (f"{band['low'] / GHZ:.3f}-{band['high'] / GHZ:.3f} GHz "
+                     f"({(band['high'] - band['low']) / MHZ:.0f} MHz)")
+    print(f"{'':<11}{level_text}: {band_text}", flush = True)
 
 def run_far_field_monitor(setup, params, far_field_monitor, paths):
     """Calculate one far field monitor normalized to INCIDENT_POWER, save it as CSV and polar cuts, print its peak."""
@@ -54,9 +68,22 @@ def run_far_field_monitor(setup, params, far_field_monitor, paths):
         write_far_field_csv(far_field_result, far_field_monitor, paths),
         plot_far_field(far_field_result, far_field_monitor, paths),
     ]
-    max_directivity = np.max(far_field_result["directivity_dbi"])
-    print(f"{far_field_monitor['name']:<9}: max directivity {max_directivity:.1f} dBi", flush = True)
+    print_far_field_summary(far_field_result, far_field_monitor)
     return saved_files
+
+def print_far_field_summary(far_field_result, far_field_monitor):
+    """Print the max directivity and its direction, then the beamwidth of the same cuts the plot shows."""
+    peak = find_far_field_peak(far_field_result)
+    print(f"{far_field_monitor['name']:<9}: max directivity {peak['directivity_dbi']:.1f} dBi "
+          f"at theta {peak['theta']:g} deg, phi {peak['phi']:g} deg")
+    beamwidth_texts = []
+    for cut_phi in FAR_FIELD_CUT_PHIS:
+        beamwidth = calculate_beamwidth(far_field_result, cut_phi)
+        if beamwidth is None:
+            beamwidth_texts.append(f"none (phi = {cut_phi})")
+        else:
+            beamwidth_texts.append(f"{beamwidth:.0f} deg (phi = {cut_phi})")
+    print(f"{'':<11}{BEAMWIDTH_LEVEL_DB:g} dB beamwidth: {', '.join(beamwidth_texts)}", flush = True)
 
 def run_near_field_monitor(setup, params, near_field_monitor, plane_index, paths):
     """Calculate one near field monitor normalized to INCIDENT_POWER, save it as CSV and heatmaps, print its max |E|."""

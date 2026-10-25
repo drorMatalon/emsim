@@ -8,6 +8,7 @@
 import ast
 import math
 import operator
+import re
 import xml.etree.ElementTree as ET
 
 from lib.common_functions import calculate_sweep_frequencies, create_points
@@ -61,10 +62,11 @@ def read_material(element):
 def read_model(path):
     """Read model.xml into a dict of boxes, ports, frequency, mesh and monitors."""
     root = load_xml_root(path, "model")
-    check_tags(root, ["box", "port", "frequency", "mesh", "monitors"], "model")
+    check_tags(root, ["parameter", "box", "port", "frequency", "mesh", "monitors"], "model")
     for tag in ("frequency", "mesh", "monitors"):
         if len(root.findall(tag)) > 1:
             raise ConfigError(f"model: <{tag}> appears more than once")
+    apply_parameters(root)
     model = {
         "boxes": [read_box(element) for element in root.findall("box")],
         "ports": [read_port(element) for element in root.findall("port")],
@@ -73,6 +75,22 @@ def read_model(path):
         "monitors": read_monitors(root.find("monitors")),
     }
     return model
+
+def apply_parameters(root):
+    """Replace every parameter symbol by its value, as text, in all the other tags, so the rest reads plain expressions.
+    The value goes in brackets, so -L/2 stays right when L is an expression; only whole words are replaced."""
+    parameters = root.findall("parameter")
+    symbols = [get_text(parameter, "symbol", "parameter") for parameter in parameters]
+    for parameter, symbol in zip(parameters, symbols):
+        check_tags(parameter, ["symbol", "value"], f"parameter '{symbol}'")
+        if not re.fullmatch(r"[A-Za-z_]+", symbol):
+            raise ConfigError(f"parameter '{symbol}': a symbol may contain only letters and _, no numbers")
+        if symbols.count(symbol) > 1:
+            raise ConfigError(f"parameter '{symbol}': is defined more than once")
+        value = get_text(parameter, "value", f"parameter '{symbol}'")
+        for element in root.iter():
+            if element.text and element.tag != "symbol":
+                element.text = re.sub(rf"\b{symbol}\b", f"({value})", element.text)
 
 def read_box(element):
     """Read one box: a material filling an axis aligned x / y / z range."""
@@ -296,4 +314,4 @@ def calculate_node(node, text, where):
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
         value = calculate_node(node.operand, text, where)
         return -value if isinstance(node.op, ast.USub) else value
-    raise ConfigError(f"{where}: '{text.strip()}' may contain only numbers and + - * / **")
+    raise ConfigError(f"{where}: '{text.strip()}' may contain only numbers, defined parameter symbols and + - * / **")

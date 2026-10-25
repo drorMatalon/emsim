@@ -1,4 +1,4 @@
-# emsim - REV_2
+# emsim - REV_3
 
 Antenna simulation environment based on openEMS.
 You describe the antenna in `model.xml`; emsim builds it, simulates it, and saves the
@@ -33,13 +33,28 @@ project/
 ## 3. model.xml rules
 
 **Units:** length in mm, frequency in GHz, resistance in Ohm.
-**Numbers** may be expressions: `1.6 + 20`, `-29.4/2 + 8.0`, `3.11/2` (only `+ - * / **`).
+**Numbers** may be expressions: `1.6 + 20`, `-29.4/2 + 8.0`, `3.11/2` (only `+ - * / **` and parameter symbols).
 **Ranges** are `[low, high]`; a single value `v` means `[v, v]` (a flat side).
 Unknown tags are errors, so a typo like `<mash>` is caught.
 
+**Parameters** name a number once, so one edit moves every box that uses it:
+```xml
+<parameter>
+    <symbol> L </symbol>
+    <value> 27.9 </value>
+</parameter>
+<parameter>
+    <symbol> inset </symbol>
+    <value> L / 3 </value>
+</parameter>
+
+<y> [-L/2 + inset, L/2] </y>
+```
+
 | Tag | Holds | Rules |
 |---|---|---|
-| `<box>` (1 or more) | `name`, `material`, `x`, `y`, `z` | material from `materials\materials.xml`; a dielectric needs size on all axes; `copper` must be flat; boxes may not overlap, except a conductor in / on a dielectric |
+| `<parameter>` (optional, any number) | `symbol`, `value` | symbol: letters and `_` only (no numbers), defined once; value: a number or expression, may use other symbols; every whole-word match in the model is replaced, so don't reuse a box / port / material name as a symbol |
+| `<box>` (1 or more) | `name`, `material`, `x`, `y`, `z` | material from `materials\materials.xml`; a dielectric needs size on all axes; `copper` must be flat; boxes may not overlap, except boxes of the same material, or a conductor in / on a dielectric (the conductor wins) |
 | `<port>` (1 or more) | `name`, `resistance`, `direction`, `x`, `y`, `z` | lumped port; `direction` is `x` / `y` / `z` and needs length along it; all ports share one resistance |
 | `<frequency>` | `start`, `stop`, `points` | sweep start to stop, both included |
 | `<mesh>` (optional) | `cells_per_wavelength` (20), `air_margin` (0.25) | at least 10 cells per wavelength; air margin in wavelengths at `start` |

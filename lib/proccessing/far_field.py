@@ -41,3 +41,16 @@ def calculate_directivity(result):
     """Directivity in dBi on the grid: the normalized |E| pattern in dB, lifted so its peak equals the max directivity Dmax."""
     e_norm = result.E_norm[0]
     return 20 * np.log10(e_norm / np.max(e_norm)) + 10 * np.log10(result.Dmax[0])
+
+def get_far_field_cut(far_field_result, cut_phi):
+    """Take one full circle of directivity from the theta / phi grid as a signed angle -180..180: theta at cut_phi
+    on the positive side, the cut_phi + 180 half at negative angles. A beam toward +z then sits in the middle,
+    so the beamwidth walk never wraps around. The nearest phi on the grid is used, and theta = 0 appears once."""
+    phi = np.array(far_field_result["phi"])
+    theta = np.array(far_field_result["theta"])
+    directivity = far_field_result["directivity_dbi"]
+    front_index = np.argmin(np.abs(phi - cut_phi))
+    back_index = np.argmin(np.abs(phi - (cut_phi + 180)))
+    angles = np.concatenate([-theta[::-1][:-1], theta])
+    cut = np.concatenate([directivity[::-1, back_index][:-1], directivity[:, front_index]])
+    return angles, cut

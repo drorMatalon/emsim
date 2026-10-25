@@ -72,8 +72,9 @@ def validate_box_material(box, materials, where):
     return []
 
 def validate_box_overlaps(boxes, materials):
-    """Reject overlapping boxes, except a conductor inside or on a dielectric (the conductor wins there).
-    Boxes that only touch, sharing a face or an edge, do not overlap."""
+    """Reject overlapping boxes, except boxes of the same material (the overlap is that material either way) and a
+    conductor inside or on a dielectric (the conductor wins there). Boxes that only touch, sharing a face or an edge,
+    do not overlap."""
     errors = []
     for first_index in range(len(boxes)):
         for second_index in range(first_index + 1, len(boxes)):
@@ -81,7 +82,10 @@ def validate_box_overlaps(boxes, materials):
             second = boxes[second_index]
             first_is_dielectric = materials[first["material"]]["type"] == "dielectric"
             second_is_dielectric = materials[second["material"]]["type"] == "dielectric"
-            if first_is_dielectric != second_is_dielectric:
+            is_same_material = first["material"] == second["material"]
+            is_conductor_on_dielectric = ((not first_is_dielectric and second_is_dielectric)
+                                          or (first_is_dielectric and not second_is_dielectric))
+            if is_same_material or is_conductor_on_dielectric:
                 continue
             if are_boxes_overlapping(first, second):
                 errors.append(f"box '{first['name']}' overlaps box '{second['name']}'")

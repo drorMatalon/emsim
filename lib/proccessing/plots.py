@@ -9,8 +9,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lib.proccessing.far_field import get_far_field_cut
 from lib.proccessing.s_parameters import calculate_reflection_db
-from lib.support.defines import AXES, GHZ
+from lib.support.defines import AXES, FAR_FIELD_CUT_PHIS, GHZ
 
 # =========================================
 # Classes and functions
@@ -66,7 +67,7 @@ def plot_far_field(far_field_result, far_field_monitor, paths):
     (the +z axis) on top; the radius spans 40 dB under the peak, lower values sit at the center."""
     peak = np.max(far_field_result["directivity_dbi"])
     figure, axes_pair = plt.subplots(1, 2, subplot_kw = {"projection": "polar"}, figsize = (11, 5))
-    for axes, cut_phi in zip(axes_pair, [0, 90]):
+    for axes, cut_phi in zip(axes_pair, FAR_FIELD_CUT_PHIS):
         angles, cut = get_far_field_cut(far_field_result, cut_phi)
         axes.plot(np.deg2rad(angles), np.maximum(cut, peak - 40))
         axes.set_theta_zero_location("N")
@@ -76,18 +77,6 @@ def plot_far_field(far_field_result, far_field_monitor, paths):
     figure.suptitle(f"{far_field_monitor['name']}: directivity [dBi] at {far_field_monitor['frequency'] / GHZ:g} GHz, "
                     f"max {peak:.1f} dBi", y = 1.04)
     return save_figure(figure, paths["outputs"] / f"{far_field_monitor['name']}.png")
-
-def get_far_field_cut(far_field_result, cut_phi):
-    """Take one full circle from the theta / phi grid: theta 0..180 at cut_phi, then the cut_phi + 180 half drawn
-    at theta -180..0, so the circle closes at theta = 0. The nearest phi on the grid is used."""
-    phi = np.array(far_field_result["phi"])
-    theta = np.array(far_field_result["theta"])
-    directivity = far_field_result["directivity_dbi"]
-    front_index = np.argmin(np.abs(phi - cut_phi))
-    back_index = np.argmin(np.abs(phi - (cut_phi + 180)))
-    angles = np.concatenate([theta, -theta[::-1]])
-    cut = np.concatenate([directivity[:, front_index], directivity[::-1, back_index]])
-    return angles, cut
 
 def plot_near_field(near_field_result, near_field_monitor, paths):
     """Plot the magnitude of the two E components lying in the plane (Ex and Ey for a z plane) as two heatmaps

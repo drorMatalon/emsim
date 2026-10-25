@@ -34,6 +34,7 @@ LIGHT_SPEED = 299792458.0
 # =========================================
 
 GHZ = 1e9
+MHZ = 1e6
 MM = 1e-3
 AXES = ("x", "y", "z")
 
@@ -75,10 +76,13 @@ MESH_SNAP_TOLERANCE = 1e-6
 # =========================================
 
 MAX_TIMESTEPS = 200000
-END_CRITERIA = 1e-4
+END_CRITERIA = 1e-3
 
 # =========================================
 # Post-processing
 # =========================================
 
 INCIDENT_POWER = 1.0
+FAR_FIELD_CUT_PHIS = [0, 90]
+BEAMWIDTH_LEVEL_DB = -3.0
+REFLECTION_BANDWIDTH_LEVEL_DB = -3.0
